@@ -22,7 +22,7 @@ if (!window.__nocturneLoaded) {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement("style");
     style.id = STYLE_ID;
-    style.textContent = `html{filter:invert(1) hue-rotate(180deg);background:#fff}img,video,picture,svg,canvas,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
+    style.textContent = `html{filter:invert(1) hue-rotate(180deg);background:#fff}img,video,picture,svg,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
     document.documentElement.appendChild(style);
   }
 
