@@ -8,6 +8,8 @@ if (!window.__nocturneLoaded) {
   let hostForced = false;
   let currentBrightness = 100;
   let currentContrast = 100;
+  let observer = null;
+  let observerTimeout = null;
 
   const levelsKey = location.hostname + "__levels__";
 
@@ -23,6 +25,31 @@ if (!window.__nocturneLoaded) {
     }
   }
 
+  function startObserver() {
+    if (observer || !document.body) return;
+
+    observer = new MutationObserver(() => {
+      clearTimeout(observerTimeout);
+      observerTimeout = setTimeout(() => {
+        observerTimeout = null;
+        reinvertBackgroundImages();
+      }, 500);
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function stopObserver() {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    if (observerTimeout) {
+      clearTimeout(observerTimeout);
+      observerTimeout = null;
+    }
+  }
+
   function applyDark() {
     if (suppressed) return;
 
@@ -34,9 +61,16 @@ if (!window.__nocturneLoaded) {
     }
 
     style.textContent = `html{filter:invert(1) hue-rotate(180deg) brightness(${currentBrightness / 100}) contrast(${currentContrast / 100});background:#fff}img,video,picture,svg,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
+
+    if (document.body) {
+      reinvertBackgroundImages();
+      startObserver();
+    }
   }
 
   function removeDark() {
+    stopObserver();
+
     document.querySelectorAll(".nocturne-bg-fix").forEach((el) => {
       el.classList.remove("nocturne-bg-fix");
     });
@@ -50,7 +84,7 @@ if (!window.__nocturneLoaded) {
     );
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function onReady() {
     if (hostExcluded) {
       removeDark();
       return;
@@ -63,8 +97,9 @@ if (!window.__nocturneLoaded) {
 
     if (document.getElementById(STYLE_ID) && !suppressed) {
       reinvertBackgroundImages();
+      startObserver();
     }
-  });
+  }
 
   chrome.storage.local.get([location.hostname, "__global__", "__excluded__", "__forced__", levelsKey], (storage) => {
     hostExcluded = Array.isArray(storage.__excluded__) && storage.__excluded__.includes(location.hostname);
@@ -78,19 +113,19 @@ if (!window.__nocturneLoaded) {
 
     if (hostExcluded) {
       removeDark();
-      return;
+    } else if (storage.__global__ !== false) {
+      if (hostForced) {
+        suppressed = false;
+        applyDark();
+      } else if (storage[location.hostname] === true) {
+        applyDark();
+      }
     }
 
-    if (storage.__global__ === false) return;
-
-    if (hostForced) {
-      suppressed = false;
-      applyDark();
-      return;
-    }
-
-    if (storage[location.hostname] === true) {
-      applyDark();
+    if (document.readyState !== "loading") {
+      onReady();
+    } else {
+      document.addEventListener("DOMContentLoaded", onReady, { once: true });
     }
   });
 
