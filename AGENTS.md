@@ -18,3 +18,6 @@
 
 ## Mistakes log
 (append corrections here after each session)
+
+- Tools require absolute paths with forward slashes: D:/projects/dark-reader-ext/file.js
+- Relative paths resolve to drive root D:\ and fail with EPERM.
