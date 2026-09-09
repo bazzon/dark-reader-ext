@@ -41,6 +41,19 @@
             box-sizing: border-box;
             margin-bottom: 6px;
         }
+        .range-row {
+            margin-bottom: 10px;
+        }
+        .range-row label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .range-row input[type="range"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         #openOptions {
             display: block;
             text-align: center;
@@ -69,6 +82,17 @@
             <input type="checkbox" id="globalToggle">
         </label>
     </div>
+
+    <div class="range-row">
+        <label for="brightness"><span>Brightness</span><span id="brightnessValue">100</span></label>
+        <input type="range" id="brightness" min="50" max="150" value="100">
+    </div>
+
+    <div class="range-row">
+        <label for="contrast"><span>Contrast</span><span id="contrastValue">100</span></label>
+        <input type="range" id="contrast" min="50" max="150" value="100">
+    </div>
+
 
     <button id="force">Always dark here</button>
     <button id="exclude">Never on this site</button>

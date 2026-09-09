@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const globalToggle = document.getElementById('globalToggle');
     const forceButton = document.getElementById('force');
     const excludeButton = document.getElementById('exclude');
+    const brightnessInput = document.getElementById('brightness');
+    const contrastInput = document.getElementById('contrast');
+    const brightnessValue = document.getElementById('brightnessValue');
+    const contrastValue = document.getElementById('contrastValue');
+
+    const levelsKey = host + "__levels__";
 
     hostElement.textContent = host;
 
@@ -27,6 +33,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    function sendLevelsMessage() {
+      const message = {
+        enabled: true,
+        brightness: Number(brightnessInput.value),
+        contrast: Number(contrastInput.value)
+      };
+
+      chrome.tabs.sendMessage(tab.id, message, () => {
+        if (chrome.runtime.lastError) {
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ["content.js"]
+          }, () => {
+            chrome.tabs.sendMessage(tab.id, message);
+          });
+        }
+      });
+    }
+
+    function updateRangeLabels() {
+      brightnessValue.textContent = brightnessInput.value;
+      contrastValue.textContent = contrastInput.value;
+    }
+
     function updateButtons() {
       forceButton.textContent = hostForced
         ? "Always dark — click to undo"
@@ -36,12 +66,20 @@ document.addEventListener('DOMContentLoaded', () => {
         : "Never on this site";
     }
 
-    chrome.storage.local.get([host, "__global__", "__excluded__", "__forced__"], (result) => {
+    chrome.storage.local.get([host, "__global__", "__excluded__", "__forced__", levelsKey], (result) => {
       toggle.checked = Boolean(result[host]);
       globalToggle.checked = result.__global__ !== false;
       hostExcluded = Array.isArray(result.__excluded__) && result.__excluded__.includes(host);
       hostForced = Array.isArray(result.__forced__) && result.__forced__.includes(host);
+
+      const levels = result[levelsKey] || {};
+      const brightness = Number(levels.brightness);
+      const contrast = Number(levels.contrast);
+      brightnessInput.value = Number.isFinite(brightness) ? brightness : 100;
+      contrastInput.value = Number.isFinite(contrast) ? contrast : 100;
+
       updateButtons();
+      updateRangeLabels();
     });
 
     globalToggle.addEventListener('change', (event) => {
@@ -52,6 +90,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const checkbox = event.target;
       chrome.storage.local.set({ [host]: checkbox.checked }, () => {
         sendEnabledMessage(checkbox.checked);
+      });
+    });
+
+    brightnessInput.addEventListener('input', () => {
+      updateRangeLabels();
+      const levels = {
+        brightness: Number(brightnessInput.value),
+        contrast: Number(contrastInput.value)
+      };
+      chrome.storage.local.set({ [levelsKey]: levels }, () => {
+        sendLevelsMessage();
+      });
+    });
+
+    contrastInput.addEventListener('input', () => {
+      updateRangeLabels();
+      const levels = {
+        brightness: Number(brightnessInput.value),
+        contrast: Number(contrastInput.value)
+      };
+      chrome.storage.local.set({ [levelsKey]: levels }, () => {
+        sendLevelsMessage();
       });
     });
 
@@ -109,6 +169,5 @@ document.addEventListener('DOMContentLoaded', () => {
       event.preventDefault();
       chrome.runtime.openOptionsPage();
     });
-
   });
 });

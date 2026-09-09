@@ -6,6 +6,10 @@ if (!window.__nocturneLoaded) {
   let suppressed = false;
   let hostExcluded = false;
   let hostForced = false;
+  let currentBrightness = 100;
+  let currentContrast = 100;
+
+  const levelsKey = location.hostname + "__levels__";
 
   function reinvertBackgroundImages() {
     if (!document.body) return;
@@ -21,11 +25,15 @@ if (!window.__nocturneLoaded) {
 
   function applyDark() {
     if (suppressed) return;
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = STYLE_ID;
-    style.textContent = `html{filter:invert(1) hue-rotate(180deg);background:#fff}img,video,picture,svg,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
-    document.documentElement.appendChild(style);
+
+    let style = document.getElementById(STYLE_ID);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = STYLE_ID;
+      document.documentElement.appendChild(style);
+    }
+
+    style.textContent = `html{filter:invert(1) hue-rotate(180deg) brightness(${currentBrightness / 100}) contrast(${currentContrast / 100});background:#fff}img,video,picture,svg,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
   }
 
   function removeDark() {
@@ -58,9 +66,15 @@ if (!window.__nocturneLoaded) {
     }
   });
 
-  chrome.storage.local.get([location.hostname, "__global__", "__excluded__", "__forced__"], (storage) => {
+  chrome.storage.local.get([location.hostname, "__global__", "__excluded__", "__forced__", levelsKey], (storage) => {
     hostExcluded = Array.isArray(storage.__excluded__) && storage.__excluded__.includes(location.hostname);
     hostForced = Array.isArray(storage.__forced__) && storage.__forced__.includes(location.hostname);
+
+    const levels = storage[levelsKey] || {};
+    const brightness = Number(levels.brightness);
+    const contrast = Number(levels.contrast);
+    currentBrightness = Number.isFinite(brightness) ? brightness : 100;
+    currentContrast = Number.isFinite(contrast) ? contrast : 100;
 
     if (hostExcluded) {
       removeDark();
@@ -81,6 +95,13 @@ if (!window.__nocturneLoaded) {
   });
 
   chrome.runtime.onMessage.addListener((message) => {
+    if (typeof message.brightness === "number") {
+      currentBrightness = message.brightness;
+    }
+    if (typeof message.contrast === "number") {
+      currentContrast = message.contrast;
+    }
+
     if (message.enabled === true) {
       suppressed = false;
       applyDark();
