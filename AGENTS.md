@@ -21,3 +21,8 @@
 
 - Tools require absolute paths with forward slashes: D:/projects/dark-reader-ext/file.js
 - Relative paths resolve to drive root D:\ and fail with EPERM.
+
+## Known issues
+- Race: hostExcluded/hostForced set in async storage callback, read by DOMContentLoaded. May fire before storage resolves.
+- reinvertBackgroundImages only runs on DOMContentLoaded, not on dynamic content or brightness changes. Needs MutationObserver.
+- Toggling global off does not un-dark already-open tabs until reload.
