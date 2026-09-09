@@ -4,6 +4,8 @@ if (!window.__nocturneLoaded) {
   const STYLE_ID = "nocturne-style";
 
   let suppressed = false;
+  let hostExcluded = false;
+  let hostForced = false;
 
   function reinvertBackgroundImages() {
     if (!document.body) return;
@@ -41,7 +43,12 @@ if (!window.__nocturneLoaded) {
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById(STYLE_ID) && isPageAlreadyDark()) {
+    if (hostExcluded) {
+      removeDark();
+      return;
+    }
+
+    if (!hostForced && document.getElementById(STYLE_ID) && isPageAlreadyDark()) {
       suppressed = true;
       removeDark();
     }
@@ -51,7 +58,23 @@ if (!window.__nocturneLoaded) {
     }
   });
 
-  chrome.storage.local.get(location.hostname, (storage) => {
+  chrome.storage.local.get([location.hostname, "__global__", "__excluded__", "__forced__"], (storage) => {
+    hostExcluded = Array.isArray(storage.__excluded__) && storage.__excluded__.includes(location.hostname);
+    hostForced = Array.isArray(storage.__forced__) && storage.__forced__.includes(location.hostname);
+
+    if (hostExcluded) {
+      removeDark();
+      return;
+    }
+
+    if (storage.__global__ === false) return;
+
+    if (hostForced) {
+      suppressed = false;
+      applyDark();
+      return;
+    }
+
     if (storage[location.hostname] === true) {
       applyDark();
     }
