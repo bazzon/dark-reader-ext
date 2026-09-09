@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
-    const host = new URL(tab.url).hostname;
 
     const hostElement = document.getElementById('host');
     const toggle = document.getElementById('toggle');
@@ -13,6 +12,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const brightnessValue = document.getElementById('brightnessValue');
     const contrastValue = document.getElementById('contrastValue');
 
+    function isRestrictedPage(url) {
+      return (
+        url.startsWith('chrome://') ||
+        url.startsWith('chrome-extension://') ||
+        url.startsWith('edge://') ||
+        url.startsWith('about:') ||
+        url.startsWith('https://chrome.google.com/webstore')
+      );
+    }
+
+    if (isRestrictedPage(tab.url)) {
+      hostElement.textContent = 'Not available on this page';
+      document.querySelectorAll('input, button').forEach((control) => {
+        control.disabled = true;
+      });
+      return;
+    }
+
+    const host = new URL(tab.url).hostname;
     const levelsKey = host + "__levels__";
 
     hostElement.textContent = host;
@@ -23,12 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendEnabledMessage(enabled) {
       chrome.tabs.sendMessage(tab.id, { enabled }, () => {
         if (chrome.runtime.lastError) {
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ["content.js"]
-          }, () => {
-            chrome.tabs.sendMessage(tab.id, { enabled });
-          });
+          // Restricted pages may not host content scripts; ignore silently.
         }
       });
     }
@@ -42,12 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       chrome.tabs.sendMessage(tab.id, message, () => {
         if (chrome.runtime.lastError) {
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ["content.js"]
-          }, () => {
-            chrome.tabs.sendMessage(tab.id, message);
-          });
+          // Restricted pages may not host content scripts; ignore silently.
         }
       });
     }
