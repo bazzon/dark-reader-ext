@@ -12,6 +12,8 @@ Rules learned:
 - One file per prompt. Never "and then also".
 - Name every identifier the file must expose, so the next file can call it.
 - New session (not new turn) per task — clears context.
+- dsh cannot overwrite an existing file. Delete it in PowerShell first, then create.
+- Never paste git commands into dsh. Git is PowerShell only.
 
 ## Loop
 1. Paste prompt into a NEW dsh session
