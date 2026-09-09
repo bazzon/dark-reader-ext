@@ -54,5 +54,27 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    document.getElementById('exclude').addEventListener('click', () => {
+      chrome.storage.local.get('__excluded__', (result) => {
+        const excluded = Array.isArray(result.__excluded__) ? result.__excluded__ : [];
+        if (!excluded.includes(host)) {
+          excluded.push(host);
+        }
+        chrome.storage.local.set({ __excluded__: excluded }, () => {
+          chrome.tabs.sendMessage(tab.id, { enabled: false }, () => {
+            if (chrome.runtime.lastError) {
+              chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ["content.js"]
+              }, () => {
+                chrome.tabs.sendMessage(tab.id, { enabled: false });
+              });
+            }
+          });
+        });
+      });
+    });
+
+
   });
 });
