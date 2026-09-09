@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Nocturne",
   "version": "1.0.0",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "scripting"],
     "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"

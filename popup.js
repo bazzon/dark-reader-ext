@@ -11,7 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('toggle').addEventListener('change', (event) => {
       const checkbox = event.target;
       chrome.storage.local.set({ [host]: checkbox.checked }, () => {
-        chrome.tabs.sendMessage(tab.id, { enabled: checkbox.checked });
+        chrome.tabs.sendMessage(tab.id, { enabled: checkbox.checked }, () => {
+          if (chrome.runtime.lastError) {
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ["content.js"]
+            }, () => {
+              chrome.tabs.sendMessage(tab.id, { enabled: checkbox.checked });
+            });
+          }
+        });
       });
     });
   });
