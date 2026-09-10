@@ -49,6 +49,18 @@
             color: #b9c6d9;
             cursor: pointer;
         }
+        #mode {
+            width: 100%;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #223049;
+            background: #111a2b;
+            color: #b9c6d9;
+            box-sizing: border-box;
+        }
+        #mode:disabled {
+            opacity: 0.4;
+        }
         button {
             display: block;
             width: 100%;
@@ -209,6 +221,14 @@
             <input type="checkbox" id="globalToggle">
             <span class="track"></span>
         </label>
+    </div>
+
+    <div class="row">
+        <select id="mode" aria-label="Filter mode">
+            <option value="invert">Invert</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="sepia">Sepia</option>
+        </select>
     </div>
 
     <div class="range-row">

@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const contrastInput = document.getElementById('contrast');
     const brightnessValue = document.getElementById('brightnessValue');
     const contrastValue = document.getElementById('contrastValue');
+    const modeSelect = document.getElementById('mode');
 
     function isRestrictedPage(url) {
       return (
@@ -24,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isRestrictedPage(tab.url)) {
       hostElement.textContent = 'Not available on this page';
-      document.querySelectorAll('input, button').forEach((control) => {
+      document.querySelectorAll('input, button, select').forEach((control) => {
         control.disabled = true;
       });
       return;
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const host = new URL(tab.url).hostname;
     const levelsKey = host + "__levels__";
+    const modeKey = host + "__mode__";
 
     hostElement.textContent = host;
 
@@ -60,6 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    function sendModeMessage(mode) {
+      chrome.tabs.sendMessage(tab.id, { enabled: true, mode }, () => {
+        if (chrome.runtime.lastError) {
+          // Restricted pages may not host content scripts; ignore silently.
+        }
+      });
+    }
+
     function updateRangeLabels() {
       brightnessValue.textContent = brightnessInput.value;
       contrastValue.textContent = contrastInput.value;
@@ -74,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         : "Never on this site";
     }
 
-    chrome.storage.local.get([host, "__global__", "__excluded__", "__forced__", levelsKey], (result) => {
+    chrome.storage.local.get([host, "__global__", "__excluded__", "__forced__", levelsKey, modeKey], (result) => {
       toggle.checked = Boolean(result[host]);
       globalToggle.checked = result.__global__ !== false;
       hostExcluded = Array.isArray(result.__excluded__) && result.__excluded__.includes(host);
@@ -85,6 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const contrast = Number(levels.contrast);
       brightnessInput.value = Number.isFinite(brightness) ? brightness : 100;
       contrastInput.value = Number.isFinite(contrast) ? contrast : 100;
+
+      const mode = result[modeKey];
+      modeSelect.value = mode === "grayscale" || mode === "sepia" ? mode : "invert";
 
       updateButtons();
       updateRangeLabels();
@@ -120,6 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       chrome.storage.local.set({ [levelsKey]: levels }, () => {
         sendLevelsMessage();
+      });
+    });
+
+    modeSelect.addEventListener('change', () => {
+      const mode = modeSelect.value;
+      chrome.storage.local.set({ [modeKey]: mode }, () => {
+        sendModeMessage(mode);
       });
     });
 
