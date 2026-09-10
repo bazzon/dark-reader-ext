@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const forcedList = document.getElementById('forcedList');
   const excludedInput = document.getElementById('excludedInput');
   const forcedInput = document.getElementById('forcedInput');
+  const resetButton = document.getElementById('resetAll');
 
   function normalizeHostname(value) {
     let hostname = value.trim();
@@ -91,6 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   addHostname(excludedInput, document.getElementById('excludedAdd'), '__excluded__');
   addHostname(forcedInput, document.getElementById('forcedAdd'), '__forced__');
+
+  resetButton.addEventListener('click', () => {
+    if (confirm('Reset all settings? This clears the global toggle, excluded sites, and always-dark sites.')) {
+      chrome.storage.local.remove(['__excluded__', '__forced__', '__global__'], render);
+    }
+  });
 
   render();
 });
