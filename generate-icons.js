@@ -2,17 +2,66 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 
-const DARK = [0x1b, 0x1b, 0x2f];
-const GOLD = [0xf6, 0xd9, 0x92];
+const BG = [0x0a, 0x0f, 0x1c];
+const ACCENT = [0x4f, 0x7c, 0xff];
 
 const VIEW = 128;
-const DISC_CX = 64;
-const DISC_CY = 64;
-const DISC_R = 62;
-const MOON_R = 46;
-const BITE_CX = 52;
-const BITE_CY = 54;
-const BITE_R = 37;
+const CIRCLE_CX = 64;
+const CIRCLE_CY = 64;
+const CIRCLE_R = 64;
+const RING_WIDTH = 3;
+const RING_INNER = CIRCLE_R - RING_WIDTH;
+
+const N_HEIGHT = VIEW * 0.6;
+const N_TOP = (VIEW - N_HEIGHT) / 2;
+const N_BOTTOM = N_TOP + N_HEIGHT;
+const N_WIDTH = N_HEIGHT * 0.7;
+const N_LEFT = (VIEW - N_WIDTH) / 2;
+const N_RIGHT = N_LEFT + N_WIDTH;
+const N_STEM = N_HEIGHT * 0.16;
+
+const LEFT_STEM = [
+  [N_LEFT, N_TOP],
+  [N_LEFT + N_STEM, N_TOP],
+  [N_LEFT + N_STEM, N_BOTTOM],
+  [N_LEFT, N_BOTTOM]
+];
+
+const RIGHT_STEM = [
+  [N_RIGHT - N_STEM, N_TOP],
+  [N_RIGHT, N_TOP],
+  [N_RIGHT, N_BOTTOM],
+  [N_RIGHT - N_STEM, N_BOTTOM]
+];
+
+const DIAGONAL = [
+  [N_LEFT, N_TOP],
+  [N_LEFT + N_STEM, N_TOP],
+  [N_RIGHT, N_BOTTOM],
+  [N_RIGHT - N_STEM, N_BOTTOM]
+];
+
+const N_QUADS = [LEFT_STEM, RIGHT_STEM, DIAGONAL];
+
+function pointInQuad(px, py, quad) {
+  let sign = 0;
+  for (let i = 0; i < quad.length; i++) {
+    const ax = quad[i][0];
+    const ay = quad[i][1];
+    const bx = quad[(i + 1) % quad.length][0];
+    const by = quad[(i + 1) % quad.length][1];
+    const cross = (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+    if (cross === 0) continue;
+    const current = cross > 0 ? 1 : -1;
+    if (sign === 0) sign = current;
+    else if (sign !== current) return false;
+  }
+  return true;
+}
+
+function inLetterN(px, py) {
+  return N_QUADS.some((quad) => pointInQuad(px, py, quad));
+}
 
 function render(size) {
   const ss = 4;
@@ -30,15 +79,15 @@ function render(size) {
         for (let sx = 0; sx < ss; sx++) {
           const ux = ((tx * ss + sx) + 0.5) / (size * ss) * VIEW;
 
-          const ddx = ux - DISC_CX;
-          const ddy = uy - DISC_CY;
-          if (ddx * ddx + ddy * ddy > DISC_R * DISC_R) continue;
+          const dx = ux - CIRCLE_CX;
+          const dy = uy - CIRCLE_CY;
+          const dist = dx * dx + dy * dy;
+          if (dist > CIRCLE_R * CIRCLE_R) continue;
 
-          const bdx = ux - BITE_CX;
-          const bdy = uy - BITE_CY;
-          const bitten = bdx * bdx + bdy * bdy <= BITE_R * BITE_R;
-          const isMoon = !bitten && ddx * ddx + ddy * ddy <= MOON_R * MOON_R;
-          const color = isMoon ? GOLD : DARK;
+          let color = BG;
+          if (dist > RING_INNER * RING_INNER || inLetterN(ux, uy)) {
+            color = ACCENT;
+          }
 
           r += color[0];
           g += color[1];
