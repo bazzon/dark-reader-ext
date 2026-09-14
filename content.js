@@ -69,7 +69,23 @@ if (!window.__nocturneLoaded) {
       modeFilter = "invert(1) sepia(0.6)";
     }
 
-    style.textContent = `html{filter:${modeFilter} brightness(${currentBrightness / 100}) contrast(${currentContrast / 100});background:#fff}img,video,picture,svg,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
+    style.textContent = `html{filter:${modeFilter} brightness(${currentBrightness / 100}) contrast(${currentContrast / 100});background:#fff}img,video,picture,iframe,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}.nocturne-bg-fix{filter:invert(1) hue-rotate(180deg)}`;
+
+    let siteRules = null;
+    try {
+      siteRules = typeof NOCTURNE_SITE_RULES === "object" ? NOCTURNE_SITE_RULES : null;
+    } catch {
+      siteRules = null;
+    }
+
+    const ruleHosts = Object.keys(siteRules || {});
+    const ruleHost = ruleHosts.includes(location.hostname)
+      ? location.hostname
+      : ruleHosts.find((host) => location.hostname.endsWith("." + host));
+
+    if (ruleHost && siteRules[ruleHost]) {
+      style.textContent += siteRules[ruleHost];
+    }
 
     if (document.body) {
       reinvertBackgroundImages();
