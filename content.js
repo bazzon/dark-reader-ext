@@ -126,13 +126,11 @@ if (!window.__nocturneLoaded) {
 
     if (hostExcluded) {
       removeDark();
-    } else if (storage.__global__ !== false) {
-      if (hostForced) {
-        suppressed = false;
-        applyDark();
-      } else if (storage[location.hostname] === true) {
-        applyDark();
-      }
+    } else if (hostForced) {
+      suppressed = false;
+      applyDark();
+    } else if (storage.__global__ !== false && storage[location.hostname] === true) {
+      applyDark();
     }
 
     if (document.readyState !== "loading") {
